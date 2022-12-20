@@ -2,18 +2,39 @@ from kombu import Connection, Queue
 from typing import Callable
 from kombu.log import get_logger
 
-from KombuAPP.mainworker import MainWorker
+from KombuAPP.workermanager import WorkerManager, ConsumerConfig
 
 
 class KombuAPP:
     def __init__(self, connection: Connection, logger=get_logger('kombu-app')):
-        self.router = MainWorker(connection, logger)
+        self.worker_manager = WorkerManager(connection, logger)
         self.logger = logger
+        self.consumer_config = None
 
-    def queue(self, name='', exchange=None, routing_key='',
+    def consumer(self, consumer_config: ConsumerConfig = ConsumerConfig()):
+        self.consumer_config = consumer_config
+
+        def decorator_crete_consumer(func):
+            return func
+
+        return decorator_crete_consumer
+
+
+    def simple_queue(self, name='', exchange=None, routing_key='',
               channel=None, bindings=None, on_declared=None,
               **kwargs) -> Callable:
-        return self.router.add_queue(queue=Queue(name, exchange, routing_key, channel, bindings, on_declared, **kwargs))
+        result = self.worker_manager.add_queue(
+            queue=Queue(name, exchange, routing_key, channel, bindings, on_declared, **kwargs),
+            consumer_config=self.consumer_config)
+        self.consumer_config = None
+        return result
+
+    def queue(self, queue: Queue) -> Callable:
+        result = self.worker_manager.add_queue(
+            queue=queue,
+            consumer_config=self.consumer_config)
+        self.consumer_config = None
+        return result
 
     def run(self):
-        self.router.run()
+        self.worker_manager.run()

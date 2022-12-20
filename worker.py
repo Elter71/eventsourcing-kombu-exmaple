@@ -34,9 +34,9 @@ if __name__ == '__main__':
     from kombu.utils.debug import setup_logging
 
     # setup root logger
-    setup_logging(loglevel='INFO', loggers=[''])
+    setup_logging(loglevel='DEBUG', loggers=[''])
 
-    with Connection('amqps://fgpuiadn:CDXiIDzXvRD5cw9YPQ6GnpP0ZB49lhH8@kebnekaise.lmq.cloudamqp.com/fgpuiadn') as conn:
+    with Connection('amqp://guest:guest@localhost') as conn:
         try:
             worker = Worker(conn)
             worker.run()
